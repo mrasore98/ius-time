@@ -1,3 +1,5 @@
+[![Python application](https://github.com/mrasore98/ius-time/actions/workflows/python-app.yml/badge.svg)](https://github.com/mrasore98/ius-time/actions/workflows/python-app.yml)
+
 # `ius-time`
 
 A simple command line application for tracking time spent on tasks of various categories.

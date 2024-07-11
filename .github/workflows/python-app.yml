@@ -33,4 +33,6 @@ jobs:
         poetry run ruff check --config "lint.ignore = ['FIX002']"
     - name: Test with pytest
       run: |
-        poetry run pytest --cov=ius_time/
+        poetry run pytest --cov-report lcov --cov=ius_time/
+    - name: Coveralls
+      uses: coverallsapp/github-action@v2.3.0
