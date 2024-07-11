@@ -1,9 +1,11 @@
 [tool.poetry]
 name = "ius-time"
 version = "0.1.0"
-description = ""
+description = "Time tracking CLI application written in Python"
 authors = ["Mathias Alexander <mathias.alexander@irhythmtech.com>"]
-readme = "README.md"
+readme = ["README.md", "docs/CommandLineInterface.md"]
+license = "GPL-3.0-or-later"
+repository = "https://github.com/mrasore98/ius-time"
 
 
 [tool.poetry.scripts]
