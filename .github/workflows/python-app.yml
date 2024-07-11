@@ -33,4 +33,4 @@ jobs:
         poetry run ruff check --config "lint.ignore = ['FIX002']"
     - name: Test with pytest
       run: |
-        poetry run pytest --cov=ius-time/
+        poetry run pytest --cov=ius_time/
