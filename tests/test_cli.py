@@ -1,7 +1,7 @@
 from typer.testing import CliRunner
 
 from ius_time import TaskManager
-from ius_time.cli.cli import app
+from ius_time.cli.main import app
 from ius_time.utils import datetime_format, datetime_pst
 
 from .conftest import add_active_task
