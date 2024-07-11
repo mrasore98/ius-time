@@ -1,4 +1,5 @@
 [![Python application](https://github.com/mrasore98/ius-time/actions/workflows/python-app.yml/badge.svg)](https://github.com/mrasore98/ius-time/actions/workflows/python-app.yml)
+[![Coverage Status](https://coveralls.io/repos/github/mrasore98/ius-time/badge.svg?branch=main)](https://coveralls.io/github/mrasore98/ius-time?branch=main)
 
 # `ius-time`
 
