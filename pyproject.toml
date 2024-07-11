@@ -1,0 +1,57 @@
+[tool.poetry]
+name = "ius-time"
+version = "0.1.0"
+description = ""
+authors = ["Mathias Alexander <mathias.alexander@irhythmtech.com>"]
+readme = "README.md"
+
+
+[tool.poetry.scripts]
+ius = "ius_time.cli.main:main"
+
+
+[tool.poetry.dependencies]
+python = "^3.12"
+typer = {extras = ["all"], version = "^0.12.3"}
+heliclockter = "^1.3.0"
+tzdata = "^2024.1"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.4.10"
+pytest = "^8.2.2"
+pytest-cov = "^5.0.0"
+
+
+[tool.ruff]
+preview = true
+output-format = "grouped"
+target-version = "py312"
+
+
+[tool.ruff.lint]
+extend-select = [
+    "PLE",       # pylint errors
+    "PLW",       # pylint warnings
+    "PT",        # flake8-pytest-style
+    #"D1",       # pydocstyle undocumented-public-x (where x is a placeholder for class, function, etc.)
+    "PTH",       # replacing os.path with pathlib
+    "I",         # isort
+    "FIX002",    # Line contains TODO
+]
+
+ignore = [
+    "PLR09",    # "too many" pylint refactor rules (e.g. too many arguments in fn definition)
+    "PT019",    # "Fixture {fixture} without value is injected as parameter"
+    "PT022",    # "No teardown in fixture {fixture} use 'return' instead of 'yield'"
+]
+
+
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = false    # Prefer pytest.fixture over pytest.fixture()
+mark-parentheses = false       # Prefer pytest.mark over pytest.mark()
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
