@@ -1,4 +1,9 @@
 """ Command line interface for ius_time. """
+import importlib.util
+import threading
+import webbrowser
+from pathlib import Path
+
 import typer
 
 from ius_time import DEFAULT_FILTER, console
@@ -37,6 +42,22 @@ def total(
         table_name += f" ({filter_})"
     table = total_rows_as_table(rows, table_name)
     console.print(table)
+
+
+@app.command()
+def web():
+    LOOPBACK_ADDR = "127.0.0.1"
+    PORT = 5001
+
+    def open_browser():
+        webbrowser.open_new(f"http://{LOOPBACK_ADDR}:{PORT}")
+
+    try:
+        from fasthtml.common import serve
+        threading.Timer(1, open_browser).start()
+        serve(appname="ius_time.web_ui", host=LOOPBACK_ADDR, port=PORT)
+    except ImportError:
+        console.print("[error]Error: \"web\" extra is not installed.")
 
 
 def main():
