@@ -2,6 +2,7 @@
 from fasthtml.common import *
 
 from ius_time.db import DB_PATH, Status
+from ius_time.utils import format_timestamp, TaskTime
 
 db = database(DB_PATH)
 tasks = db.t.tasks
@@ -22,11 +23,11 @@ rt = app.route
 
 
 def mk_active_row(task: Task):
-    return Tr(Td(task.name), Td(task.start_time), Td(task.category), Td(Button("End Task")), id=f"active-task-{task.id}")
+    return Tr(Td(task.name), Td(format_timestamp(task.start_time)), Td(task.category), Td(Button("End Task")), id=f"active-task-{task.id}")
 
 
 def mk_completed_row(task: Task):
-    return Tr(Td(task.name), Td(task.start_time), Td(task.end_time), Td(task.total_time), Td(task.category), id=f"complete-task-{task.id}")
+    return Tr(Td(task.name), Td(format_timestamp(task.start_time)), Td(format_timestamp(task.end_time)), Td(str(TaskTime(task.total_time))), Td(task.category), id=f"complete-task-{task.id}")
 
 
 def active_tasks_table():

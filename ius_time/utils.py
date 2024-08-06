@@ -22,6 +22,10 @@ class datetime_pst(datetime_tz):
     assumed_timezone_for_timezone_naive_input = ZoneInfo("America/Los_Angeles")
 
 
+def format_timestamp(timestamp: float):
+    return datetime_pst.fromtimestamp(timestamp, tz=ZoneInfo("America/Los_Angeles")).strftime(datetime_format)
+
+
 class TaskTime:
     """ Custom class for handling reporting of task times."""
 
@@ -37,7 +41,6 @@ class TaskTime:
         return f"{self.hours}h {self.minutes}m {self.seconds}s"
 
 
-# TODO add nicer formatting to list table using TaskTime to format raw times
 def list_rows_as_table(rows: list[Row], table_name: str = "Table") -> Table:
     table = Table(title=table_name, title_style="title", highlight=True)
     # Pull column names from Row keys
