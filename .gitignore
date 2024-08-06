@@ -162,4 +162,11 @@ cython_debug/
 
 # ruff linter and formatter
 .ruff_cache/
+
+# data base
 *.db
+*.db-shm
+*.db-wal
+
+# fasthtml
+.sesskey
