@@ -133,7 +133,7 @@ class TaskManager:
                     )
 
                 self.console.print(
-                    f"[success]Ended [info]{num_tasks}[/info] at [info]{end_time_dt.strftime(datetime_format)}[/info]")
+                    f"[success]Ended [info]{num_tasks}[/info] tasks at [info]{end_time_dt.strftime(datetime_format)}[/info]")
                 return True
             except sqlite3.Error:
                 self.console.print("[error]An error occurred during attempt to end all active tasks!")
