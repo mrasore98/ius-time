@@ -23,7 +23,7 @@ def reset_test_db(manager: TaskManager):
 
 @pytest.fixture(scope="module")
 def _create_remove_db():
-    """ Teardown-only fixture to remove the test database. """
+    """Teardown-only fixture to remove the test database."""
     yield
     TEST_DB.unlink()
 
@@ -43,10 +43,10 @@ def database_testing(_create_remove_db):
 
 
 def add_active_task(
-        manager: TaskManager,
-        task_name: str,
-        start_time: float,
-        category: str = "Misc",
+    manager: TaskManager,
+    task_name: str,
+    start_time: float,
+    category: str = "Misc",
 ):
     """
     Helper function to add active tasks to the database associated with the given TaskManager.
@@ -62,12 +62,14 @@ def add_active_task(
     (name, start_time, category, status) VALUES \
     (?, ?, ?, ?)"
     with manager.connection:
-        manager.connection.execute(sql, [task_name, start_time, category, manager.status.ACTIVE])
+        manager.connection.execute(
+            sql, [task_name, start_time, category, manager.status.ACTIVE]
+        )
 
 
 @pytest.fixture
 def filter_test(database_testing):
-    """ Create active tasks with start times corresponding to each filter. """
+    """Create active tasks with start times corresponding to each filter."""
     tm = database_testing
 
     active_tasks = [
@@ -78,7 +80,7 @@ def filter_test(database_testing):
         ("Quarter", datetime_pst.past(weeks=10).timestamp(), "Category A"),
         ("Month", datetime_pst.past(days=25).timestamp(), "Category B"),
         ("Week", datetime_pst.past(days=5).timestamp(), "Misc"),
-        ("Day", datetime_pst.past(seconds=3600*22).timestamp(), "Category A"),
+        ("Day", datetime_pst.past(seconds=3600 * 22).timestamp(), "Category A"),
     ]
 
     for task in active_tasks:

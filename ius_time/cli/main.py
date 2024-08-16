@@ -1,8 +1,7 @@
-""" Command line interface for ius_time. """
-import importlib.util
+"""Command line interface for ius_time."""
+
 import threading
 import webbrowser
-from pathlib import Path
 
 import typer
 
@@ -18,22 +17,17 @@ app.add_typer(end_tasks.app, name="end", help="End active tasks.")
 
 
 @app.command(help="Start a new task.")
-def start(task_name: str,
-          category: str = typer.Option(
-              "Misc",
-              "-c",
-              "--category")
-          ):
+def start(task_name: str, category: str = typer.Option("Misc", "-c", "--category")):
     tm.start_task(task_name, category=category)
 
 
-@app.command(help="Sum the amount of time spent on your tasks. Only calculated for completed tasks")
+@app.command(
+    help="Sum the amount of time spent on your tasks. Only calculated for completed tasks"
+)
 def total(
-        filter_: FilterEnum = DEFAULT_FILTER,
-        category: str = typer.Option(None,
-                                     "-c",
-                                     "--category")
-        ):
+    filter_: FilterEnum = DEFAULT_FILTER,
+    category: str = typer.Option(None, "-c", "--category"),
+):
     rows = tm.sum_task_times(filter_, category=category)
     table_name = "Total Time"
     if category is not None:
@@ -54,10 +48,11 @@ def web():
 
     try:
         from fasthtml.common import serve
+
         threading.Timer(1, open_browser).start()
         serve(appname="ius_time.web_ui", host=LOOPBACK_ADDR, port=PORT)
     except ImportError:
-        console.print("[error]Error: \"web\" extra is not installed.")
+        console.print('[error]Error: "web" extra is not installed.')
 
 
 def main():

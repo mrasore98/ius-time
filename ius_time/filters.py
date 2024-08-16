@@ -1,4 +1,5 @@
 """Defines Filter class and any behavior relevant to filtering results."""
+
 from datetime import timedelta
 from enum import StrEnum
 
@@ -16,7 +17,6 @@ class FilterEnum(StrEnum):
 
 
 def parse_filter(member: FilterEnum) -> float:
-
     _td_map = {
         FilterEnum.DAY: timedelta(days=1),
         FilterEnum.WEEK: timedelta(weeks=1),
@@ -24,7 +24,7 @@ def parse_filter(member: FilterEnum) -> float:
         FilterEnum.QUARTER: timedelta(weeks=13),
         FilterEnum.SEMIANNUAL: timedelta(weeks=26),
         FilterEnum.YEAR: timedelta(days=365),
-        FilterEnum.NONE: timedelta()
+        FilterEnum.NONE: timedelta(),
     }
 
     td = _td_map[member]

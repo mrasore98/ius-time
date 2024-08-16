@@ -1,4 +1,5 @@
-""" Miscellaneous utilities to support ius_time. """
+"""Miscellaneous utilities to support ius_time."""
+
 from sqlite3 import Row
 from zoneinfo import ZoneInfo
 
@@ -18,16 +19,19 @@ datetime_format = "%a %m/%d/%Y %I:%M:%S %p"
 
 
 class datetime_pst(datetime_tz):
-    """ A 'datetime_tz' that matches the timezone for San Francisco. """
+    """A 'datetime_tz' that matches the timezone for San Francisco."""
+
     assumed_timezone_for_timezone_naive_input = ZoneInfo("America/Los_Angeles")
 
 
 def format_timestamp(timestamp: float):
-    return datetime_pst.fromtimestamp(timestamp, tz=ZoneInfo("America/Los_Angeles")).strftime(datetime_format)
+    return datetime_pst.fromtimestamp(
+        timestamp, tz=ZoneInfo("America/Los_Angeles")
+    ).strftime(datetime_format)
 
 
 class TaskTime:
-    """ Custom class for handling reporting of task times."""
+    """Custom class for handling reporting of task times."""
 
     def __init__(self, total_seconds: int):
         self.raw = total_seconds
@@ -57,7 +61,9 @@ def list_rows_as_table(rows: list[Row], table_name: str = "Table") -> Table:
         for idx in range(2, 5):
             if isinstance(row[idx], float):  # Do not need to recast None type
                 if idx in [2, 3]:  # Start and end times
-                    row[idx] = datetime_pst.fromtimestamp(row[idx], tz=ZoneInfo("America/Los_Angeles")).strftime(datetime_format)
+                    row[idx] = datetime_pst.fromtimestamp(
+                        row[idx], tz=ZoneInfo("America/Los_Angeles")
+                    ).strftime(datetime_format)
                 elif idx == 4:  # Total time
                     row[idx] = TaskTime(row[idx])
         table.add_row(*[str(row[i]) for i in range(len(row))])
@@ -80,6 +86,6 @@ def total_rows_as_table(rows: list[Row], table_name: str = "Task Totals"):
 
     for category, time in zip(categories, task_times):
         task_time = TaskTime(time)
-        table.add_row(category, str(task_time), f"{time/total_time_s * 100:.2f}")
+        table.add_row(category, str(task_time), f"{time / total_time_s * 100:.2f}")
 
     return table

@@ -36,7 +36,7 @@ def all():
         except sqlite3.Error:
             raise typer.Exit(3)
     else:
-        console.print("Operation [blue italic]\"end all\"[/] aborted!")
+        console.print('Operation [blue italic]"end all"[/] aborted!')
 
 
 if __name__ == "__main__":

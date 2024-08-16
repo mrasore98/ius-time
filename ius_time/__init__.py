@@ -9,7 +9,7 @@ DEFAULT_FILTER = typer.Option(
     FilterEnum.MONTH,
     "--filter",
     "-f",
-    help="When applied, limits list output to tasks started within the filter window."
+    help="When applied, limits list output to tasks started within the filter window.",
 )
 
 task_manager = TaskManager()

@@ -9,16 +9,26 @@ from .conftest import add_active_task
 runner = CliRunner()
 
 
-def add_generic_tasks(manager: TaskManager, task_base_name: str, num_tasks: int = 5, category: str = "Misc") -> None:
+def add_generic_tasks(
+    manager: TaskManager,
+    task_base_name: str,
+    num_tasks: int = 5,
+    category: str = "Misc",
+) -> None:
     for i in range(1, num_tasks + 1):
-        add_active_task(manager, f"{task_base_name}_{i}", datetime_pst.past(weeks=i).timestamp(), category=category)
+        add_active_task(
+            manager,
+            f"{task_base_name}_{i}",
+            datetime_pst.past(weeks=i).timestamp(),
+            category=category,
+        )
 
 
 class TestStart:
     def test_start(self, cli_testing, request):
         now = datetime_pst.now()
         task_name = request.node.name
-        result = runner.invoke(app, ['start', task_name])
+        result = runner.invoke(app, ["start", task_name])
         assert result.exit_code == 0
         assert task_name in result.output
         assert str(now.strftime(datetime_format)) in result.output
@@ -68,7 +78,7 @@ class TestEnd:
     def test_end_all_not_confirmed(self, cli_testing):
         result = runner.invoke(app, ["end", "all"], input="N")
         assert result.exit_code == 0
-        assert "Operation \"end all\" aborted" in result.output
+        assert 'Operation "end all" aborted' in result.output
 
 
 class TestList:

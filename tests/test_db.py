@@ -154,7 +154,9 @@ def test_sum_task_times(database_testing):
 
         start_time = datetime_pst.now().timestamp()
         with tm.connection:
-            tm.execute(sql, [task_name, start_time, start_time + duration, duration, category])
+            tm.execute(
+                sql, [task_name, start_time, start_time + duration, duration, category]
+            )
 
     completed_tasks = [
         ("Task A", 300, "Category A"),
@@ -165,8 +167,12 @@ def test_sum_task_times(database_testing):
     ]
 
     # Account for expected task durations
-    expected_category_a_total = sum(task[1] for task in completed_tasks if task[2] == "Category A")
-    expected_category_b_total = sum(task[1] for task in completed_tasks if task[2] == "Category B")
+    expected_category_a_total = sum(
+        task[1] for task in completed_tasks if task[2] == "Category A"
+    )
+    expected_category_b_total = sum(
+        task[1] for task in completed_tasks if task[2] == "Category B"
+    )
     expected_all_category_total = sum(task[1] for task in completed_tasks)
 
     # Add tasks to database
@@ -175,8 +181,12 @@ def test_sum_task_times(database_testing):
 
     summed_times_rows = tm.sum_task_times()
 
-    returned_category_a_total = sum(row[1] for row in summed_times_rows if row[0] == "Category A")
-    returned_category_b_total = sum(row[1] for row in summed_times_rows if row[0] == "Category B")
+    returned_category_a_total = sum(
+        row[1] for row in summed_times_rows if row[0] == "Category A"
+    )
+    returned_category_b_total = sum(
+        row[1] for row in summed_times_rows if row[0] == "Category B"
+    )
     returned_all_category_total = sum(row[1] for row in summed_times_rows)
 
     assert returned_category_a_total == expected_category_a_total
@@ -205,7 +215,9 @@ def test_filtered_total(filter_test):
     total_time = sum(row[1] for row in summed_rows)
 
     # Sum of tasks "Day", "Week", "Month"
-    expected_time = (timedelta(seconds=3600*22) + timedelta(days=5) + timedelta(days=25)).total_seconds()
+    expected_time = (
+        timedelta(seconds=3600 * 22) + timedelta(days=5) + timedelta(days=25)
+    ).total_seconds()
     assert abs(expected_time - total_time) < abs_tolerance_s
 
 
