@@ -4,13 +4,15 @@ import sqlite3
 from enum import StrEnum
 from pathlib import Path
 
+import platformdirs
 from rich.console import Console
 
 from ius_time.filters import FilterEnum, parse_filter
 from ius_time.utils import TaskTime, datetime_format, datetime_pst, ius_theme
 
-# TODO: Make database location configurable
-DB_PATH = Path(__file__).parent.parent.resolve() / "ius-tasks.db"
+
+# TODO: pull appname and author from inspect metadata
+DB_PATH = platformdirs.user_data_path("ius-time", "IUS Time") / "ius-tasks.db"
 
 
 class Status(StrEnum):
