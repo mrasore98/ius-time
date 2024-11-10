@@ -12,7 +12,10 @@ from ius_time.utils import TaskTime, datetime_format, datetime_pst, ius_theme
 
 
 # TODO: pull appname and author from inspect metadata
-DB_PATH = platformdirs.user_data_path("ius-time", "IUS Time") / "ius-tasks.db"
+db_dir = platformdirs.user_data_path("ius-time", "IUS Time")
+db_dir.mkdir(exist_ok=True, parents=True)
+DB_PATH = db_dir / "ius-tasks.db"
+
 
 
 class Status(StrEnum):

@@ -4,11 +4,15 @@ import reflex as rx
 
 from rxconfig import config
 
+from .models import Task
+from .components import task_input, active_tasks_table, completed_tasks_table
 
-class State(rx.State):
+
+class AppState(rx.State):
     """The app state."""
 
-    ...
+    tasks: list[Task]
+
 
 
 def index() -> rx.Component:
@@ -16,17 +20,12 @@ def index() -> rx.Component:
     return rx.container(
         rx.color_mode.button(position="top-right"),
         rx.vstack(
-            rx.heading("Welcome to Reflex!", size="9"),
-            rx.text(
-                "Get started by editing ",
-                rx.code(f"{config.app_name}/{config.app_name}.py"),
-                size="5",
-            ),
-            rx.link(
-                rx.button("Check out our docs!"),
-                href="https://reflex.dev/docs/getting-started/introduction/",
-                is_external=True,
-            ),
+            rx.heading("IUS Time", size="9"),
+            task_input(),
+            rx.heading("Active Tasks", size="6"),
+            active_tasks_table(),
+            rx.heading("Completed Tasks", size="6"),
+            completed_tasks_table(),
             spacing="5",
             justify="center",
             min_height="85vh",
