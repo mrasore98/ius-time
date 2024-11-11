@@ -1,7 +1,8 @@
 import reflex as rx
 
 from ius_time import task_manager
-from .models import Task
+from ius_time.utils import TaskTime
+from .models import Tasks
 
 MS_PER_QUARTER = (1000 * 60 * 60 * 24 * 30 * 3)
 
@@ -26,21 +27,47 @@ def task_input() -> rx.Component:
     )
 
 
-class ActiveTaskHandler(rx.State):
-    selected_task: Task = None
+# class ActiveTaskHandler(rx.ComponentState):
+    task: Tasks
 
     def end_task(self):
-        """
-        self.selected_task = get row where button was pressed
-        task_manager.end_task(self.selected_task.name)
-        """
+        task_manager.end_task(self.task.name)
+
+    @classmethod
+    def get_component(cls, **props):
+        return rx.table.row(
+            rx.table.cell(cls.task.name),
+            rx.table.cell(
+                formatted_time(cls.task.start_time),
+            ),
+            rx.table.cell(cls.task.category),
+            rx.table.cell(
+                rx.button("End Task", color_scheme="ruby", on_click=cls.end_task)
+            )
+        )
+
+    @classmethod
+    def new(cls, task: Tasks):
+        instance = cls.create()
+        instance.task = task
+
+class ActiveTaskHandler(rx.State):
+    selected_task: Tasks = None
+
+    def end_task(self):
         pass
 
-def active_task_row(task: Task) -> rx.Component:
+
+def formatted_time(timestamp: int) -> rx.Component:
+    return rx.moment(timestamp, from_now_during=MS_PER_QUARTER, format="YYYY-MM-DDD HH:mm:ss")
+
+
+
+def active_task_row(task: Tasks) -> rx.Component:
     return rx.table.row(
-        rx.table.cell(task.name),
+        rx.table.cell(task.name, id=task.name),
         rx.table.cell(
-            rx.moment(task.start_time, from_now_during=MS_PER_QUARTER, format="YYYY-MM-DD HH:mm:ss")
+            formatted_time(task.start_time),
         ),
         rx.table.cell(task.category),
         rx.table.cell(
@@ -48,20 +75,46 @@ def active_task_row(task: Task) -> rx.Component:
         )
     )
 
-def active_tasks_table(tasks: list[Task]) -> rx.Component:
+def active_tasks_table(active_tasks: list[Tasks]) -> rx.Component:
     return rx.table.root(
         rx.table.header(
             rx.table.row(
-            rx.table.column_header_cell("Name"),
-            rx.table.column_header_cell("Start Time"),
-            rx.table.column_header_cell("Category"),
-            rx.table.column_header_cell("Action"),
+                rx.table.column_header_cell("Name"),
+                rx.table.column_header_cell("Start Time"),
+                rx.table.column_header_cell("Category"),
+                rx.table.column_header_cell("Action"),
             )
         ),
         rx.table.body(
-            rx.foreach(tasks, active_task_row)
+            rx.foreach(active_tasks, active_task_row)
         )
     )
 
-def completed_tasks_table() -> rx.Component:
-    return rx.text("Placeholder for completed tasks table")
+def completed_task_row(task: Tasks) -> rx.Component:
+    return rx.table.row(
+        rx.table.cell(task.name),
+        rx.table.cell(
+            formatted_time(task.start_time),
+        ),
+        rx.table.cell(
+            formatted_time(task.end_time),
+        ),
+        rx.table.cell(task.total_time),  # TODO: format this to use the time appropriately
+        rx.table.cell(task.category)
+    )
+
+def completed_tasks_table(completed_tasks: list[Tasks]) -> rx.Component:
+    return rx.table.root(
+        rx.table.header(
+            rx.table.row(
+                rx.table.column_header_cell("Name"),
+                rx.table.column_header_cell("Start Time"),
+                rx.table.column_header_cell("End Time"),
+                rx.table.column_header_cell("Total Time"),
+                rx.table.column_header_cell("Category"),
+            )
+        ),
+        rx.table.body(
+            rx.foreach(completed_tasks, completed_task_row)
+        )
+    )
