@@ -17,7 +17,6 @@ class AppState(rx.State):
     tasks: list[Tasks] = [Tasks(name="example", start_time=999999999, end_time=(999999999 + 30000), total_time=30, category="Test", status=Status.ACTIVE)]
     active_tasks: list[Tasks] = []
     completed_tasks: list[Tasks] = []
-    active_task_dict = dict()
 
     def end_task(self):
         pass
@@ -27,7 +26,6 @@ class AppState(rx.State):
         complete_rows = tm.list_complete()
         self.active_tasks = [Tasks(**row) for row in active_rows]
         self.completed_tasks = [Tasks(**row) for row in complete_rows]
-        self.active_task_dict = {task: task.name for task in self.active_tasks}
 
 
 def index() -> rx.Component:
