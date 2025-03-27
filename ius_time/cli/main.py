@@ -5,7 +5,7 @@ from ius_time import DEFAULT_FILTER, console
 from ius_time import task_manager as tm
 from ius_time.cli import end_tasks, lists
 from ius_time.filters import FilterEnum
-from ius_time.utils import total_rows_as_table
+from ius_time.table_outputs import total_rows_as_table
 
 app = typer.Typer()
 app.add_typer(lists.app, name="list", help="List tasks, with an optional time filter.")
@@ -42,7 +42,6 @@ def total(
 def main():
     tm.create_task_table()
     app()
-    tm.close()
 
 
 if __name__ == "__main__":

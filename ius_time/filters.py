@@ -14,20 +14,18 @@ class FilterEnum(StrEnum):
     YEAR = "year"
     NONE = "none"
 
+filter_td_map = {
+    FilterEnum.DAY: timedelta(days=1),
+    FilterEnum.WEEK: timedelta(weeks=1),
+    FilterEnum.MONTH: timedelta(days=30),
+    FilterEnum.QUARTER: timedelta(weeks=13),
+    FilterEnum.SEMIANNUAL: timedelta(weeks=26),
+    FilterEnum.YEAR: timedelta(days=365),
+    FilterEnum.NONE: timedelta()
+}
 
 def parse_filter(member: FilterEnum) -> float:
-
-    _td_map = {
-        FilterEnum.DAY: timedelta(days=1),
-        FilterEnum.WEEK: timedelta(weeks=1),
-        FilterEnum.MONTH: timedelta(days=30),
-        FilterEnum.QUARTER: timedelta(weeks=13),
-        FilterEnum.SEMIANNUAL: timedelta(weeks=26),
-        FilterEnum.YEAR: timedelta(days=365),
-        FilterEnum.NONE: timedelta()
-    }
-
-    td = _td_map[member]
+    td = filter_td_map[member]
     if td.total_seconds() == 0:
         return 0
     else:

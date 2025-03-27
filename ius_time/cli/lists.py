@@ -3,7 +3,7 @@ import typer
 from ius_time import DEFAULT_FILTER, console
 from ius_time import task_manager as tm
 from ius_time.filters import FilterEnum
-from ius_time.utils import list_rows_as_table
+from ius_time.table_outputs import list_rows_as_table
 
 app = typer.Typer()
 
