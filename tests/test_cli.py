@@ -11,7 +11,7 @@ runner = CliRunner()
 
 def add_generic_tasks(manager: TaskManager, task_base_name: str, num_tasks: int = 5, category: str = "Misc") -> None:
     for i in range(1, num_tasks + 1):
-        add_active_task(manager, f"{task_base_name}_{i}", datetime_pst.past(weeks=i).timestamp(), category=category)
+        add_active_task(manager, f"{task_base_name}_{i}", datetime_pst.past(weeks=i), category=category)
 
 
 class TestStart:
@@ -26,10 +26,10 @@ class TestStart:
 
 class TestEnd:
     def test_end_task_active(self, cli_testing, request):
-        tm = cli_testing
+        raw_tm, _ = cli_testing
         task_name = request.node.name
         now = datetime_pst.now()
-        add_active_task(tm, task_name, now.timestamp())
+        add_active_task(raw_tm, task_name, now)
         result = runner.invoke(app, ["end", "task", task_name])
         assert result.exit_code == 0
         assert str(now.strftime(datetime_format)) in result.output
@@ -45,7 +45,7 @@ class TestEnd:
         tm = cli_testing
         task_name = request.node.name
         now = datetime_pst.now()
-        add_active_task(tm, task_name, now.timestamp())
+        add_active_task(tm, task_name, now)
         result = runner.invoke(app, ["end", "last"])
         assert result.exit_code == 0
         assert str(now.strftime(datetime_format)) in result.output
