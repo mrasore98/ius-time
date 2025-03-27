@@ -152,7 +152,8 @@ class TaskManager:
             expression = expression.where(Task.start_time >= filter_start_time)
         with Session(self.db_engine) as session:
             total_times: list[tuple[str, timedelta]] = session.exec(expression).all()
-        grouped_times = it.groupby(total_times, key=lambda x: x[0])
+        sorted_total_times = sorted(total_times, key=lambda x: x[0])
+        grouped_times = it.groupby(sorted_total_times, key=lambda x: x[0])
         results = [
             (group, sum(row[1].total_seconds() for row in rows))
             for group, rows in grouped_times
