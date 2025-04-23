@@ -12,7 +12,7 @@ app = typer.Typer()
 def all(filter_: FilterEnum = DEFAULT_FILTER):
     rows = tm.list_all(filter_)
     if len(rows) == 0:
-        console.print("[error]No tasks to list!")
+        console.print("[error]No tasks to list[/error]")
         return
     table_name = "All Tasks"
     if filter_ != FilterEnum.NONE:
@@ -25,7 +25,7 @@ def all(filter_: FilterEnum = DEFAULT_FILTER):
 def active(filter_: FilterEnum = DEFAULT_FILTER):
     rows = tm.list_active(filter_)
     if len(rows) == 0:
-        console.print("[error]No active tasks to list!")
+        console.print("[error]No active tasks to list[/error]")
         return
     table_name = "Active Tasks"
     if filter_ != FilterEnum.NONE:
@@ -38,7 +38,7 @@ def active(filter_: FilterEnum = DEFAULT_FILTER):
 def complete(filter_: FilterEnum = DEFAULT_FILTER):
     rows = tm.list_complete(filter_)
     if len(rows) == 0:
-        console.print("[error]No completed tasks to list!")
+        console.print("[error]No completed tasks[/error]")
         return
     table_name = "Completed Tasks"
     if filter_ != FilterEnum.NONE:

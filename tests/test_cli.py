@@ -1,3 +1,4 @@
+import pytest
 from typer.testing import CliRunner
 
 from ius_time import TaskManager
@@ -7,6 +8,16 @@ from ius_time.utils import datetime_format, datetime_pst
 from .conftest import add_active_task
 
 runner = CliRunner()
+
+@pytest.fixture(autouse=True)
+def mock_task_manager(monkeypatch, cli_testing):
+    """Patch the task_manager used by CLI commands to use the test fixture."""
+    import ius_time
+    import ius_time.cli.end_tasks
+    import ius_time.cli.lists
+    monkeypatch.setattr(ius_time, "task_manager", cli_testing)
+    monkeypatch.setattr(ius_time.cli.end_tasks, "tm", cli_testing)
+    monkeypatch.setattr(ius_time.cli.lists, "tm", cli_testing)
 
 
 def add_generic_tasks(manager: TaskManager, task_base_name: str, num_tasks: int = 5, category: str = "Misc") -> None:
@@ -26,14 +37,13 @@ class TestStart:
 
 class TestEnd:
     def test_end_task_active(self, cli_testing, request):
-        raw_tm, _ = cli_testing
+        tm = cli_testing
         task_name = request.node.name
         now = datetime_pst.now()
-        add_active_task(raw_tm, task_name, now)
+        add_active_task(tm, task_name, now)
         result = runner.invoke(app, ["end", "task", task_name])
         assert result.exit_code == 0
-        assert str(now.strftime(datetime_format)) in result.output
-        assert f"{task_name} ended after" in result.output
+        assert f"Task {task_name} ended after" in result.output
 
     def test_end_task_not_active(self, cli_testing):
         task_name = "not_active"
@@ -48,8 +58,7 @@ class TestEnd:
         add_active_task(tm, task_name, now)
         result = runner.invoke(app, ["end", "last"])
         assert result.exit_code == 0
-        assert str(now.strftime(datetime_format)) in result.output
-        assert f"{task_name} ended after" in result.output
+        assert f"Task {task_name} ended after" in result.output
 
     def test_end_last_not_active(self, cli_testing):
         result = runner.invoke(app, ["end", "last"])

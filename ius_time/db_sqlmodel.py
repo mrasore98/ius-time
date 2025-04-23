@@ -65,7 +65,7 @@ class TaskManager:
         try:
             with Session(self.db_engine) as session:
                 task: Task | None = session.exec(
-                    select(Task).where(Task.name == task_name and Task.status == Status.ACTIVE)
+                    select(Task).where(Task.name == task_name, Task.status == Status.ACTIVE)
                 ).first()
                 if task:
                     self._set_end_attributes(task)
@@ -74,7 +74,7 @@ class TaskManager:
                     self._print_end_successful(task)
                     return True
                 else:
-                    self.console.print(f"[error]Task [info]{task_name}[/info] not found![/error]")
+                    self.console.print(f"[error]{task_name} is not an Active Task[/error]")
                     return False
         except Exception as e:
             self.console.print(f"[error]Could not end task [info]{task_name}[/info]: {e}[/error]")
@@ -88,9 +88,10 @@ class TaskManager:
                         Task.start_time == (
                             select(func.max(Task.start_time))
                             .where(Task.status == Status.ACTIVE)
+                            .scalar_subquery()
                         )
                     )
-                ).one()
+                ).first()
             if last_task_name:
                 return self.end_task(last_task_name)
             else:
@@ -106,7 +107,8 @@ class TaskManager:
                active_tasks = session.exec(
                    select(Task).where(Task.status == Status.ACTIVE)
                ).all()
-               map(self._set_end_attributes, active_tasks)
+               for task in active_tasks:
+                   self._set_end_attributes(task)
                session.commit()
             self.console.print(f"[success]Ended [info]{len(active_tasks)}[/info] active tasks at [info]{datetime_pst.now().strftime(datetime_format)}[/info]!")
             return True

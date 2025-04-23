@@ -2,8 +2,8 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
+from sqlalchemy import text
 
-from ius_time.db import TaskManager as RawTaskManager
 from ius_time.db_sqlmodel import Session, Status, Task
 from ius_time.db_sqlmodel import TaskManager as SqlModelTaskManager
 from ius_time.utils import datetime_pst
@@ -11,20 +11,19 @@ from ius_time.utils import datetime_pst
 TEST_DB = Path(".", "test_db.db")
 
 
-def setup_test_db(manager: RawTaskManager):
-    # Expose method for ease of testing
-    # manager.execute = manager.connection.execute
+def setup_test_db(manager: SqlModelTaskManager):
     manager.create_task_table()
 
 
-def reset_test_db(manager: RawTaskManager):
-    manager.connection.execute("DROP TABLE tasks")
-    manager.close()
+def reset_test_db(manager: SqlModelTaskManager):
+    with Session(manager.db_engine) as session:
+        session.exec(text("DROP TABLE task"))
+        session.commit()
 
 
 @pytest.fixture(scope="module")
 def _create_remove_db():
-    """ Teardown-only fixture to remove the test database. """
+    """Teardown-only fixture to remove the test database."""
     yield
     TEST_DB.unlink()
 
@@ -37,17 +36,17 @@ def database_testing(_create_remove_db):
     On setup, create the `task` table and customize the connection to easily call `:execute:` for SQL queries.
     On teardown, the `task` table is dropped and the connection is closed.
     """
-    tm = RawTaskManager(TEST_DB)
+    tm = SqlModelTaskManager(TEST_DB)
     setup_test_db(tm)
     yield tm
     reset_test_db(tm)
 
 
 def add_active_task(
-        manager: SqlModelTaskManager,
-        task_name: str,
-        start_time: datetime_pst,
-        category: str = "Misc",
+    manager: SqlModelTaskManager,
+    task_name: str,
+    start_time: datetime_pst,
+    category: str = "Misc",
 ):
     """
     Helper function to add active tasks to the database associated with the given TaskManager.
@@ -65,24 +64,31 @@ def add_active_task(
     # with manager.connection:
     #     manager.connection.execute(sql, [task_name, start_time, category, manager.status.ACTIVE])
     with Session(manager.db_engine) as session:
-        session.add(Task(name=task_name, start_time=start_time, category=category, status=Status.ACTIVE))
+        session.add(
+            Task(
+                name=task_name,
+                start_time=start_time,
+                category=category,
+                status=Status.ACTIVE,
+            )
+        )
         session.commit()
 
 
 @pytest.fixture
 def filter_test(database_testing):
-    """ Create active tasks with start times corresponding to each filter. """
+    """Create active tasks with start times corresponding to each filter."""
     tm = database_testing
 
     active_tasks = [
-        ("First Task", 10, "Misc"),
+        ("First Task", datetime_pst.past(days=1000), "Misc"),
         ("Over a Year", datetime_pst.past(days=400), "Category A"),
         ("Within a Year", datetime_pst.past(days=300), "Category B"),
         ("Semiannual", datetime_pst.past(weeks=23), "Misc"),
         ("Quarter", datetime_pst.past(weeks=10), "Category A"),
         ("Month", datetime_pst.past(days=25), "Category B"),
         ("Week", datetime_pst.past(days=5), "Misc"),
-        ("Day", datetime_pst.past(seconds=3600*22), "Category A"),
+        ("Day", datetime_pst.past(seconds=3600 * 22), "Category A"),
     ]
 
     for task in active_tasks:
@@ -93,14 +99,8 @@ def filter_test(database_testing):
 
 @pytest.fixture
 def cli_testing(_create_remove_db):
-    # Have to use the same TaskManager object as the app
-    # tm = task_manager
-    # tm.close()
-    # # Change the database location for testing
-    # tm._connection = sqlite3.connect(TEST_DB)
-    # tm.connection.row_factory = sqlite3.Row
-    raw_tm = RawTaskManager(TEST_DB)
-    sql_model_tm = SqlModelTaskManager(TEST_DB)
-    setup_test_db(raw_tm)
-    yield sql_model_tm
-    reset_test_db(raw_tm)
+    # Set up SQLModel TaskManager for CLI testing
+    tm = SqlModelTaskManager(TEST_DB)
+    setup_test_db(tm)
+    yield tm
+    reset_test_db(tm)

@@ -1,5 +1,7 @@
 from datetime import timedelta
 
+
+from ius_time.db_sqlmodel import Session, Status, Task, select
 from ius_time.filters import FilterEnum
 from ius_time.utils import datetime_pst
 
@@ -7,35 +9,43 @@ from ius_time.utils import datetime_pst
 def test_start_task_no_category(database_testing, request):
     tm = database_testing
     new_task_name = request.node.name
-    query = "SELECT * FROM tasks WHERE name = ?"
-
+    
     # Show task does not exist at start of test
-    empty_row = tm.execute(query, [new_task_name]).fetchone()
-    assert empty_row is None
+    with Session(tm.db_engine) as session:
+        query = select(Task).where(Task.name == new_task_name)
+        empty_row = session.exec(query).first()
+        assert empty_row is None
 
     # Confirm task is started
     tm.start_task(new_task_name)
-    task_list = tm.execute(query, [new_task_name]).fetchall()
-    assert len(task_list) == 1
-    assert task_list[0]["name"] == new_task_name
+    
+    with Session(tm.db_engine) as session:
+        query = select(Task).where(Task.name == new_task_name)
+        task_list = session.exec(query).all()
+        assert len(task_list) == 1
+        assert task_list[0].name == new_task_name
 
 
 def test_start_task_with_category(database_testing, request):
     tm = database_testing
     new_task_name = request.node.name
     category = "test"
-    query = "SELECT * FROM tasks WHERE name = ? AND category = ?"
-
+    
     # Show task does not exist at start of test
-    empty_row = tm.execute(query, [new_task_name, category]).fetchone()
-    assert empty_row is None
+    with Session(tm.db_engine) as session:
+        query = select(Task).where(Task.name == new_task_name, Task.category == category)
+        empty_row = session.exec(query).first()
+        assert empty_row is None
 
     # Confirm task is started
     tm.start_task(new_task_name, category=category)
-    task_list = tm.execute(query, [new_task_name, category]).fetchall()
-    assert len(task_list) == 1
-    assert task_list[0]["name"] == new_task_name
-    assert task_list[0]["category"] == category
+    
+    with Session(tm.db_engine) as session:
+        query = select(Task).where(Task.name == new_task_name, Task.category == category)
+        task_list = session.exec(query).all()
+        assert len(task_list) == 1
+        assert task_list[0].name == new_task_name
+        assert task_list[0].category == category
 
 
 def test_end_task(database_testing):
@@ -47,22 +57,21 @@ def test_end_task(database_testing):
         tm.start_task(task)
 
     # Query the number of active tasks
-    active_query = "SELECT * FROM tasks WHERE status = ?"
-    active_task_rows = tm.execute(active_query, [tm.status.ACTIVE]).fetchall()
-    num_active_tasks = len(active_task_rows)
-    # tm.console.log(f"Number of initial active tasks: {num_active_tasks}")
-    assert len(tasks_to_start) == num_active_tasks
+    with Session(tm.db_engine) as session:
+        active_query = select(Task).where(Task.status == Status.ACTIVE)
+        active_task_rows = session.exec(active_query).all()
+        num_active_tasks = len(active_task_rows)
+        assert len(tasks_to_start) == num_active_tasks
 
     for idx, task in enumerate(tasks_to_start, 1):
         expected_rows = num_active_tasks - idx
-        # tm.console.log(f"Calling `end_task`: Iteration {idx}")
         tm.end_task(task)
 
-        active_task_rows = tm.execute(active_query, [tm.status.ACTIVE]).fetchall()
-        rows_after_end_call = len(active_task_rows)
-        # tm.console.log(f"Expected number of active tasks: {expected_rows}\n"
-        #                f"Returned number of active tasks: {rows_after_end_call}\n")
-        assert rows_after_end_call == expected_rows
+        with Session(tm.db_engine) as session:
+            active_query = select(Task).where(Task.status == Status.ACTIVE)
+            active_task_rows = session.exec(active_query).all()
+            rows_after_end_call = len(active_task_rows)
+            assert rows_after_end_call == expected_rows
 
 
 def test_end_last(database_testing):
@@ -78,19 +87,19 @@ def test_end_all_active(database_testing):
         tm.start_task(task)
 
     # Query the number of active tasks
-    active_query = "SELECT * FROM tasks WHERE status = ?"
-    active_task_rows = tm.execute(active_query, [tm.status.ACTIVE]).fetchall()
-    num_active_tasks = len(active_task_rows)
-    # tm.console.log(f"Number of initial active tasks: {num_active_tasks}")
-    assert len(tasks_to_start) == num_active_tasks
+    with Session(tm.db_engine) as session:
+        active_query = select(Task).where(Task.status == Status.ACTIVE)
+        active_task_rows = session.exec(active_query).all()
+        num_active_tasks = len(active_task_rows)
+        assert len(tasks_to_start) == num_active_tasks
 
     tm.end_all_active()
 
-    active_task_rows = tm.execute(active_query, [tm.status.ACTIVE]).fetchall()
-    rows_after_end_call = len(active_task_rows)
-    # tm.console.log(f"Expected number of active tasks: {expected_rows}\n"
-    #                f"Returned number of active tasks: {rows_after_end_call}\n")
-    assert rows_after_end_call == 0
+    with Session(tm.db_engine) as session:
+        active_query = select(Task).where(Task.status == Status.ACTIVE)
+        active_task_rows = session.exec(active_query).all()
+        rows_after_end_call = len(active_task_rows)
+        assert rows_after_end_call == 0
 
 
 def test_list_active(database_testing):
@@ -148,13 +157,21 @@ def test_sum_task_times(database_testing):
     tm = database_testing
 
     def add_completed_task(task_name: str, duration: int, category: str):
-        sql = "INSERT INTO tasks \
-        (name, start_time, end_time, total_time, category, status) VALUES \
-        (?, ?, ?, ?, ?, 'Complete')"
-
-        start_time = datetime_pst.now().timestamp()
-        with tm.connection:
-            tm.execute(sql, [task_name, start_time, start_time + duration, duration, category])
+        start_time = datetime_pst.now()
+        end_time = start_time + timedelta(seconds=duration)
+        total_time = timedelta(seconds=duration)
+        
+        with Session(tm.db_engine) as session:
+            task = Task(
+                name=task_name,
+                start_time=start_time,
+                end_time=end_time,
+                total_time=total_time,
+                category=category,
+                status=Status.COMPLETE
+            )
+            session.add(task)
+            session.commit()
 
     completed_tasks = [
         ("Task A", 300, "Category A"),
@@ -165,8 +182,12 @@ def test_sum_task_times(database_testing):
     ]
 
     # Account for expected task durations
-    expected_category_a_total = sum(task[1] for task in completed_tasks if task[2] == "Category A")
-    expected_category_b_total = sum(task[1] for task in completed_tasks if task[2] == "Category B")
+    expected_category_a_total = sum(
+        task[1] for task in completed_tasks if task[2] == "Category A"
+    )
+    expected_category_b_total = sum(
+        task[1] for task in completed_tasks if task[2] == "Category B"
+    )
     expected_all_category_total = sum(task[1] for task in completed_tasks)
 
     # Add tasks to database
@@ -175,8 +196,12 @@ def test_sum_task_times(database_testing):
 
     summed_times_rows = tm.sum_task_times()
 
-    returned_category_a_total = sum(row[1] for row in summed_times_rows if row[0] == "Category A")
-    returned_category_b_total = sum(row[1] for row in summed_times_rows if row[0] == "Category B")
+    returned_category_a_total = sum(
+        row[1] for row in summed_times_rows if row[0] == "Category A"
+    )
+    returned_category_b_total = sum(
+        row[1] for row in summed_times_rows if row[0] == "Category B"
+    )
     returned_all_category_total = sum(row[1] for row in summed_times_rows)
 
     assert returned_category_a_total == expected_category_a_total
@@ -205,7 +230,9 @@ def test_filtered_total(filter_test):
     total_time = sum(row[1] for row in summed_rows)
 
     # Sum of tasks "Day", "Week", "Month"
-    expected_time = (timedelta(seconds=3600*22) + timedelta(days=5) + timedelta(days=25)).total_seconds()
+    expected_time = (
+        timedelta(seconds=3600 * 22) + timedelta(days=5) + timedelta(days=25)
+    ).total_seconds()
     assert abs(expected_time - total_time) < abs_tolerance_s
 
 
