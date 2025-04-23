@@ -1,180 +1,165 @@
-""" Database objects and operations related to task management. """
-import sqlite3
+import itertools as it
+from datetime import timedelta
 from enum import StrEnum
 from pathlib import Path
 
 from rich.console import Console
+from sqlmodel import Field, Session, SQLModel, create_engine, func, select
 
-from ius_time.filters import FilterEnum, parse_filter
+from ius_time.filters import FilterEnum, filter_td_map
 from ius_time.utils import TaskTime, datetime_format, datetime_pst, ius_theme
 
 # TODO: Make database location configurable
-DB_PATH = Path(__file__).parent.parent.resolve() / "ius-tasks.db"
-
+DEFAULT_DB_PATH = Path(__file__).parent.parent.resolve() / "ius-tasks.db"
+DEFAULT_DB_ENGINE = create_engine(f"sqlite:///{DEFAULT_DB_PATH}")
 
 class Status(StrEnum):
     ACTIVE = "Active"
     COMPLETE = "Complete"
 
+class Task(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    name: str
+    start_time: datetime_pst = Field(default_factory=datetime_pst.now)
+    end_time: datetime_pst | None = None
+    total_time: timedelta | None = None
+    category: str
+    status: Status = Status.ACTIVE
 
 class TaskManager:
-    """ Primary class for managing tasks in the database. """
-
-    status = Status
-
-    def __init__(self, db_path: Path = DB_PATH):
-        self._connection = sqlite3.connect(db_path)
-        self._connection.row_factory = sqlite3.Row
+    def __init__(self, db_path: Path = DEFAULT_DB_PATH):
+        self.db_engine = create_engine(f"sqlite:///{db_path}")
+        self.session: Session | None = None
         self.console = Console(theme=ius_theme)
-
-    @property
-    def connection(self) -> sqlite3.Connection:
-        return self._connection
-
-    def close(self):
-        self._connection.close()
+        self.create_task_table()
 
     def create_task_table(self) -> bool:
-        """
-        Creates a default table named 'tasks' if one does not yet exist.
-
-        :return: Boolean confirming existence of table.
-        """
-        self._connection.execute(
-            "CREATE TABLE IF NOT EXISTS tasks (\
-                    id INTEGER PRIMARY KEY NOT NULL, \
-                    name TEXT NOT NULL, \
-                    start_time INTEGER NOT NULL, \
-                    end_time INTEGER, \
-                    total_time INTEGER, \
-                    category TEXT NOT NULL, \
-                    status TEXT NOT NULL\
-                    )"
-        )
-
-        confirmation = self._connection.execute("SELECT name FROM sqlite_master WHERE name='tasks'")
-        return confirmation.fetchone() is not None
-
+        try:
+            SQLModel.metadata.create_all(self.db_engine)
+            return True
+        except Exception as e:
+            self.console.print(f"[error]Error creating task table: {e}")
+            return False
+    
     # START FUNCTIONS
     def start_task(self, task_name: str, category: str = "Misc"):
-        # TODO: Add data validation for task name to ensure unique (only compare to active tasks)
-        start_task_time_dt = datetime_pst.now()
-        self.console.print(f"Starting task [info]{task_name}[/] at [info]{start_task_time_dt.strftime(datetime_format)}[/]")
-        start_time = start_task_time_dt.timestamp()
         try:
-            with self._connection:
-                self._connection.execute(
-                    "INSERT INTO tasks (name, start_time, category, status) VALUES(?, ?, ?, ?)",
-                    [task_name, start_time, category, self.status.ACTIVE])
-        except sqlite3.Error:
-            self.console.print(f"[error]Could not start task [info]{task_name}[/info]![/error]")
-
+            with Session(self.db_engine) as session:
+                task = Task(name=task_name, category=category)
+                session.add(task)
+                session.commit()
+                session.refresh(task)
+            self.console.print(f"Starting task [info]{task.name}[/] at [info]{task.start_time.strftime(datetime_format)}[/]")
+        except Exception as e:
+            self.console.print(f"[error]Could not start task [info]{task_name}[/info]! \n{e}[/error]")
+            
     # END FUNCTIONS
+    def _set_end_attributes(self, task: Task):
+        task.end_time = datetime_pst.now()
+        task.total_time = task.end_time - datetime_pst.from_datetime(task.start_time)
+        task.status = Status.COMPLETE
+        
+    def _print_end_successful(self, task: Task):
+        self.console.print(f"[success]Task [info]{task.name}[/info] ended after [info]{TaskTime(task.total_time.total_seconds())!s}[/info] :100:")       
+    
     def end_task(self, task_name: str) -> bool:
-        end_time_dt = datetime_pst.now()
-
-        self.console.print(f"Ending task [info]{task_name}[/] at [info]{end_time_dt.strftime(datetime_format)}[/]")
-
-        start_time_result_row = self._connection.execute("SELECT start_time FROM tasks WHERE name = ? AND status = "
-                                                         "?",
-                                                         [task_name, self.status.ACTIVE]).fetchone()
-        if start_time_result_row is not None:
-            start_time = start_time_result_row["start_time"]
-        else:
-            self.console.print(f"[error][info]{task_name}[/info] is not an Active Task!")
-            return False
-
-        end_time = end_time_dt.timestamp()
-        total_time = end_time - start_time
-
         try:
-            with self._connection:
-                self._connection.execute(
-                    "UPDATE tasks SET end_time = ?, total_time = ?, status = ? WHERE name = ?",
-                    [end_time, total_time, self.status.COMPLETE, task_name]
-                )
-
-            # TODO: Randomize success emoji
-            self.console.print(f"[success]Task [info]{task_name}[/info] ended after [info]{TaskTime(total_time)!s}[/info] :100:")
-            return True
-        except sqlite3.Error:
-            self.console.print(f"[error]Could not end task [info]{task_name}[/info]![/error]")
-            raise
+            with Session(self.db_engine) as session:
+                task: Task | None = session.exec(
+                    select(Task).where(Task.name == task_name, Task.status == Status.ACTIVE)
+                ).first()
+                if task:
+                    self._set_end_attributes(task)
+                    session.commit()
+                    session.refresh(task)
+                    self._print_end_successful(task)
+                    return True
+                else:
+                    self.console.print(f"[error]{task_name} is not an Active Task[/error]")
+                    return False
+        except Exception as e:
+            self.console.print(f"[error]Could not end task [info]{task_name}[/info]: {e}[/error]")
+            return False
 
     def end_last(self) -> bool:
-        last_task_result = (self._connection.execute(
-            "SELECT name FROM tasks WHERE start_time = (SELECT MAX(start_time) FROM tasks WHERE status = ?)",
-            [self.status.ACTIVE])
-                            .fetchone())
-        if last_task_result is not None:
-            return self.end_task(last_task_result["name"])
-        else:
-            self.console.print("[error]No active tasks to end!")
-            return False
-
-    def end_all_active(self) -> bool:
-        end_time_dt = datetime_pst.now()
-        end_time = end_time_dt.timestamp()
-
-        # Get the number of active tasks
-        resp = self._connection.execute("SELECT * FROM tasks WHERE status = ?", [self.status.ACTIVE])
-        num_tasks = len(resp.fetchall())
-
-        if num_tasks > 0:
-            try:
-                with self._connection:
-                    # Update the end time first for use in calculating total time
-                    self._connection.execute("UPDATE tasks SET end_time = ? WHERE status = ?",
-                                             [end_time, self.status.ACTIVE])
-                    # Update the total time and set status to complete
-                    self._connection.execute(
-                        "UPDATE tasks SET total_time = (end_time - start_time), status = ? WHERE status = ?",
-                        [self.status.COMPLETE, self.status.ACTIVE]
+        try:
+            with Session(self.db_engine) as session:
+                last_task_name = session.exec(
+                    select(Task.name).where(
+                        Task.start_time == (
+                            select(func.max(Task.start_time))
+                            .where(Task.status == Status.ACTIVE)
+                            .scalar_subquery()
+                        )
                     )
-
-                self.console.print(
-                    f"[success]Ended [info]{num_tasks}[/info] at [info]{end_time_dt.strftime(datetime_format)}[/info]")
-                return True
-            except sqlite3.Error:
-                self.console.print("[error]An error occurred during attempt to end all active tasks!")
-                raise
-        else:
-            self.console.print("[error]No active tasks to end!")
+                ).first()
+            if last_task_name:
+                return self.end_task(last_task_name)
+            else:
+                self.console.print("[error]No active tasks to end![/error]")
+                return False
+        except Exception as e:
+            self.console.print(f"[error]Could not end last task: {e}[/error]")
             return False
-
+    
+    def end_all_active(self) -> bool:
+        try:
+            with Session(self.db_engine) as session:
+               active_tasks = session.exec(
+                   select(Task).where(Task.status == Status.ACTIVE)
+               ).all()
+               for task in active_tasks:
+                   self._set_end_attributes(task)
+               session.commit()
+            self.console.print(f"[success]Ended [info]{len(active_tasks)}[/info] active tasks at [info]{datetime_pst.now().strftime(datetime_format)}[/info]!")
+            return True
+        except Exception as e:
+            self.console.print(f"[error]Could not end all tasks: {e}[/error]")
+            return False
+            
     # LIST FUNCTIONS
-    def list_active(self, filter_: FilterEnum = FilterEnum.MONTH) -> list[sqlite3.Row]:
-        start_time = parse_filter(filter_)
-        resp = self._connection.execute(
-            "SELECT * FROM tasks WHERE status = ? AND start_time > ?",
-            [self.status.ACTIVE, start_time]
-        )
-        return resp.fetchall()
-
-    def list_complete(self, filter_: FilterEnum = FilterEnum.MONTH) -> list[sqlite3.Row]:
-        start_time = parse_filter(filter_)
-        resp = self._connection.execute(
-            "SELECT * FROM tasks WHERE status = ? AND start_time > ?",
-            [self.status.COMPLETE, start_time]
-        )
-        return resp.fetchall()
-
-    def list_all(self, filter_: FilterEnum = FilterEnum.MONTH) -> list[sqlite3.Row]:
-        start_time = parse_filter(filter_)
-        resp = self._connection.execute(
-            "SELECT * FROM tasks WHERE start_time > ?",
-            [start_time]
-        )
-        return resp.fetchall()
-
+    def list_active(self, filter_: FilterEnum = FilterEnum.MONTH) -> list[Task]:
+        expression = select(Task).where(Task.status == Status.ACTIVE)
+        if filter_ != FilterEnum.NONE:
+            filter_start_time = datetime_pst.now() - filter_td_map[filter_]
+            expression = expression.where(Task.start_time >= filter_start_time)
+        with Session(self.db_engine) as session:
+            active_tasks = session.exec(expression).all()
+            return list(active_tasks)
+            
+    def list_complete(self, filter_: FilterEnum = FilterEnum.MONTH) -> list[Task]:
+        expression = select(Task).where(Task.status == Status.COMPLETE)
+        if filter_ != FilterEnum.NONE:
+            filter_start_time = datetime_pst.now() - filter_td_map[filter_]
+            expression = expression.where(Task.start_time >= filter_start_time)
+        with Session(self.db_engine) as session:
+            complete_tasks = session.exec(expression).all()
+            return list(complete_tasks)
+    
+    def list_all(self, filter_: FilterEnum = FilterEnum.MONTH) -> list[Task]:
+        expression = select(Task)
+        if filter_ != FilterEnum.NONE:
+            filter_start_time = datetime_pst.now() - filter_td_map[filter_]
+            expression = expression.where(Task.start_time >= filter_start_time)
+        with Session(self.db_engine) as session:
+            all_tasks = session.exec(expression).all()
+            return list(all_tasks)
+            
     # TOTAL FUNCTIONS
-    def sum_task_times(self, filter_: FilterEnum = FilterEnum.MONTH, category: str = None) -> list[sqlite3.Row]:
-        start_time = parse_filter(filter_)
-
-        if category is None:
-            resp = self._connection.execute("SELECT category, SUM(total_time) FROM tasks WHERE start_time > ? \
-                GROUP BY category ORDER BY SUM(total_time) DESC", [start_time])
-        else:
-            resp = self._connection.execute("SELECT category, SUM(total_time) FROM tasks WHERE start_time > ? AND category = ? \
-                GROUP BY category ORDER BY SUM(total_time) DESC", [start_time, category])
-        return resp.fetchall()
+    def sum_task_times(self, filter_: FilterEnum = FilterEnum.MONTH, category: str | None = None) -> list[tuple[str, int]]:
+        expression = select(Task.category, Task.total_time).where(Task.status == Status.COMPLETE)
+        if category:
+            expression = expression.where(Task.category == category)
+        if filter_ != FilterEnum.NONE:
+            filter_start_time = datetime_pst.now() - filter_td_map[filter_]
+            expression = expression.where(Task.start_time >= filter_start_time)
+        with Session(self.db_engine) as session:
+            total_times: list[tuple[str, timedelta]] = session.exec(expression).all()
+        # TODO: Use SQL 'GROUP BY' and 'SUM' to handle the logic
+        sorted_total_times = sorted(total_times, key=lambda x: x[0])
+        grouped_times = it.groupby(sorted_total_times, key=lambda x: x[0])
+        results = [
+            (group, sum(row[1].total_seconds() for row in rows))
+            for group, rows in grouped_times
+        ]
+        return sorted(results, key=lambda x: x[1], reverse=True)

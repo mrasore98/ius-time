@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ius-time"
-version = "0.1.0"
+version = "0.2.0"
 description = "Time tracking CLI application written in Python"
 authors = ["Mathias Alexander <mathias.alexander@irhythmtech.com>"]
 readme = ["README.md", "docs/CommandLineInterface.md"]
@@ -17,6 +17,7 @@ python = "^3.12"
 typer = {extras = ["all"], version = "^0.12.3"}
 heliclockter = "^1.3.0"
 tzdata = "^2024.1"
+sqlmodel = "^0.0.24"
 
 
 [tool.poetry.group.dev.dependencies]

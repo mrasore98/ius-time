@@ -1,3 +1,4 @@
+import pytest
 from typer.testing import CliRunner
 
 from ius_time import TaskManager
@@ -8,10 +9,20 @@ from .conftest import add_active_task
 
 runner = CliRunner()
 
+@pytest.fixture(autouse=True)
+def _mock_task_manager(monkeypatch, cli_testing):
+    """Patch the task_manager used by CLI commands to use the test fixture."""
+    import ius_time
+    import ius_time.cli.end_tasks
+    import ius_time.cli.lists
+    monkeypatch.setattr(ius_time, "task_manager", cli_testing)
+    monkeypatch.setattr(ius_time.cli.end_tasks, "tm", cli_testing)
+    monkeypatch.setattr(ius_time.cli.lists, "tm", cli_testing)
+
 
 def add_generic_tasks(manager: TaskManager, task_base_name: str, num_tasks: int = 5, category: str = "Misc") -> None:
     for i in range(1, num_tasks + 1):
-        add_active_task(manager, f"{task_base_name}_{i}", datetime_pst.past(weeks=i).timestamp(), category=category)
+        add_active_task(manager, f"{task_base_name}_{i}", datetime_pst.past(weeks=i), category=category)
 
 
 class TestStart:
@@ -29,11 +40,10 @@ class TestEnd:
         tm = cli_testing
         task_name = request.node.name
         now = datetime_pst.now()
-        add_active_task(tm, task_name, now.timestamp())
+        add_active_task(tm, task_name, now)
         result = runner.invoke(app, ["end", "task", task_name])
         assert result.exit_code == 0
-        assert str(now.strftime(datetime_format)) in result.output
-        assert f"{task_name} ended after" in result.output
+        assert f"Task {task_name} ended after" in result.output
 
     def test_end_task_not_active(self, cli_testing):
         task_name = "not_active"
@@ -45,11 +55,10 @@ class TestEnd:
         tm = cli_testing
         task_name = request.node.name
         now = datetime_pst.now()
-        add_active_task(tm, task_name, now.timestamp())
+        add_active_task(tm, task_name, now)
         result = runner.invoke(app, ["end", "last"])
         assert result.exit_code == 0
-        assert str(now.strftime(datetime_format)) in result.output
-        assert f"{task_name} ended after" in result.output
+        assert f"Task {task_name} ended after" in result.output
 
     def test_end_last_not_active(self, cli_testing):
         result = runner.invoke(app, ["end", "last"])
