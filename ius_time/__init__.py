@@ -1,8 +1,7 @@
 import typer
 from rich.console import Console
 
-from ius_time.db_sqlmodel import TaskManager
-# from ius_time.db import TaskManager
+from ius_time.db import TaskManager
 from ius_time.filters import FilterEnum
 from ius_time.utils import ius_theme
 

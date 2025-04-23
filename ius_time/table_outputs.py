@@ -1,6 +1,6 @@
 from rich.table import Table
 
-from ius_time.db_sqlmodel import Task, Status
+from ius_time.db import Status, Task
 from ius_time.utils import TaskTime, datetime_format
 
 

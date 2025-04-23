@@ -1,7 +1,6 @@
 from datetime import timedelta
 
-
-from ius_time.db_sqlmodel import Session, Status, Task, select
+from ius_time.db import Session, Status, Task, select
 from ius_time.filters import FilterEnum
 from ius_time.utils import datetime_pst
 

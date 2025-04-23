@@ -1,10 +1,8 @@
 """ Miscellaneous utilities to support ius_time. """
-from sqlite3 import Row
 from zoneinfo import ZoneInfo
 
 from heliclockter import datetime_tz
 from rich.theme import Theme
-
 
 ius_theme = Theme({
     "info": "blue underline",

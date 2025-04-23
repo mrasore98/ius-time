@@ -10,7 +10,7 @@ from .conftest import add_active_task
 runner = CliRunner()
 
 @pytest.fixture(autouse=True)
-def mock_task_manager(monkeypatch, cli_testing):
+def _mock_task_manager(monkeypatch, cli_testing):
     """Patch the task_manager used by CLI commands to use the test fixture."""
     import ius_time
     import ius_time.cli.end_tasks

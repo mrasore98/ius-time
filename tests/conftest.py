@@ -1,11 +1,10 @@
-from datetime import datetime
 from pathlib import Path
 
 import pytest
 from sqlalchemy import text
 
-from ius_time.db_sqlmodel import Session, Status, Task
-from ius_time.db_sqlmodel import TaskManager as SqlModelTaskManager
+from ius_time.db import Session, Status, Task
+from ius_time.db import TaskManager as SqlModelTaskManager
 from ius_time.utils import datetime_pst
 
 TEST_DB = Path(".", "test_db.db")
