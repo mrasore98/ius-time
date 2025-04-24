@@ -1,0 +1,56 @@
+<html>
+  <head>
+    <title>IUS Time</title>
+  </head>
+  <body>
+    <div>
+      <form method="POST" action="add-active">
+        <input type="text" name="new-item" value="">
+        <button type="submit">Start</button>
+      </form>
+    </div>
+    <h1>Active Tasks</h1>
+    {% if active|length == 0 %}
+    <p>No active tasks!</p>
+    {% else %}
+    <table id="active-table">
+      <tr>
+        <th>Name</th>
+        <th>Category</th>
+        <th>Start Time</th>
+      </tr> 
+      {% for atask in active %}
+      <tr>
+        <td>{{ atask.name }}</td>
+        <td>{{ atask.category }}</td>
+        <td>{{ atask.start_time }}</td>
+        <td><button>End Task</button></td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% endif %}
+    <h1>Completed Tasks</h1>
+    {% if complete|length == 0 %}
+    <p>No complete tasks yet!</p>
+    {% else %}
+    <table>
+      <tr>
+        <th>Name</th>
+        <th>Category</th>
+        <th>Start Time</th>
+        <th>End Time</th>
+        <th>Total Time</th>
+      </tr> 
+      {% for ctask in complete %}
+      <tr>
+        <td>{{ ctask.name }}</td>
+        <td>{{ ctask.category }}</td>
+        <td>{{ ctask.start_time }}</td>
+        <td>{{ ctask.end_time }}</td>
+        <td>{{ ctask.total_time }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% endif %}
+  </body>
+</html>
