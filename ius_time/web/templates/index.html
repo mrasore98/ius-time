@@ -4,8 +4,9 @@
   </head>
   <body>
     <div>
-      <form method="POST" action="add-active">
-        <input type="text" name="new-item" value="">
+      <form method="POST" action="start">
+        <input type="text" name="new-task-name" placeholder="Task Name" value="">
+        <input type="text" name="new-task-category" placeholder="Category" value="">
         <button type="submit">Start</button>
       </form>
     </div>
@@ -24,7 +25,7 @@
         <td>{{ atask.name }}</td>
         <td>{{ atask.category }}</td>
         <td>{{ atask.start_time }}</td>
-        <td><button>End Task</button></td>
+        <td><a href="/end/{{ atask.name }}"><button>End Task</button></a></td>
       </tr>
       {% endfor %}
     </table>
