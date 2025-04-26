@@ -1,35 +1,45 @@
 <html>
   <head>
     <title>IUS Time</title>
+    {% include "_styles.html" %}
   </head>
   <body>
     <div>
-      <form method="POST" action="start">
-        <input type="text" name="new-task-name" placeholder="Task Name" value="">
-        <input type="text" name="new-task-category" placeholder="Category" value="">
-        <button type="submit">Start</button>
+      <h1 class="text-3xl">New Task</h1>
+      {% if message %}
+      <p class="font-bold text-red-500">{{ message }}</p>
+      {% endif %}
+      <form id="new-task-form" method="POST" action="start">
+        <input required class="border rounded-md" type="text" name="new-task-name" placeholder="Task Name" value=""/>
+        <input class="border rounded-md" type="text" name="new-task-category" placeholder="Category" value=""/>
+        <button class="start-btn" type="submit" variant="primary">Start</button>
       </form>
     </div>
+    <div>
     <h1>Active Tasks</h1>
     {% if active|length == 0 %}
     <p>No active tasks!</p>
     {% else %}
     <table id="active-table">
       <tr>
-        <th>Name</th>
+        <th class='border border-gray-300'>Name</th>
         <th>Category</th>
         <th>Start Time</th>
+        <th>Action</th>
       </tr> 
       {% for atask in active %}
       <tr>
         <td>{{ atask.name }}</td>
         <td>{{ atask.category }}</td>
-        <td>{{ atask.start_time }}</td>
-        <td><a href="/end/{{ atask.name }}"><button>End Task</button></a></td>
+        <td>{{ atask.start_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+        <td><a href="/end/{{ atask.name }}"><button class="end-btn">End Task</button></a></td>
+      
       </tr>
       {% endfor %}
     </table>
     {% endif %}
+    </div>
+    <div>
     <h1>Completed Tasks</h1>
     {% if complete|length == 0 %}
     <p>No complete tasks yet!</p>
@@ -46,12 +56,13 @@
       <tr>
         <td>{{ ctask.name }}</td>
         <td>{{ ctask.category }}</td>
-        <td>{{ ctask.start_time }}</td>
-        <td>{{ ctask.end_time }}</td>
+        <td>{{ ctask.start_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+        <td>{{ ctask.end_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
         <td>{{ ctask.total_time }}</td>
       </tr>
       {% endfor %}
     </table>
     {% endif %}
+    </div>
   </body>
 </html>
