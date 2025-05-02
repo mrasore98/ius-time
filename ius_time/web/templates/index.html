@@ -16,6 +16,18 @@
       </form>
     </div>
     <div>
+      <h2>Filters</h2>
+        <div class="inline-flex">
+         {% for filter_ in filters %}
+         <a href="/set_filter/{{ filter_.value }}">
+           <button class="filter-btn {% if filter_ == selected_filter %} border-black outline-2 text-black {% else %} border-gray-500 text-gray-500 {% endif %}">
+             {{ filter_.value|capitalize }}
+           </button>
+         </a>
+         {% endfor %}
+        </div>
+    </div>
+    <div>
     <h1>Active Tasks</h1>
     {% if active|length == 0 %}
     <p>No active tasks!</p>

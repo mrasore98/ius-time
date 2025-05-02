@@ -6,21 +6,26 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlmodel import select
 
+# from ius_time import DEFAULT_FILTER
 from ius_time.db import DEFAULT_DB_PATH, Session, Status, Task, TaskManager
+from ius_time.filters import FilterEnum
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 task_manager = TaskManager(DEFAULT_DB_PATH)
+selected_filter = FilterEnum.MONTH
 
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request, message: str = ""):
-    active_tasks = task_manager.list_active()
-    complete_tasks = task_manager.list_complete()
+    active_tasks = task_manager.list_active(selected_filter)
+    complete_tasks = task_manager.list_complete(selected_filter)
     return templates.TemplateResponse(
         request=request,
         name="index.html",
         context={
+            "filters": FilterEnum,
+            "selected_filter": selected_filter,
             "active": active_tasks,
             "complete": complete_tasks,
             "message": urlp.unquote(message),
@@ -55,6 +60,13 @@ async def end_task(request: Request, task_name: str):
             f"/?message={urlp.quote(str(e))}",
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+
+@app.get("/set_filter/{filter_}")
+async def set_filter(filter_: FilterEnum):
+    global selected_filter  # noqa: PLW0603
+    selected_filter = filter_
+    return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
 
 
 if __name__ == "__main__":

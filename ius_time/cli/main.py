@@ -50,11 +50,11 @@ def web():
         import uvicorn
 
         from ius_time.web import web_app
-
-        threading.Timer(1, open_browser).start()
-        uvicorn.run(web_app, host=LOOPBACK_ADDR, port=PORT)
     except ImportError:
         console.print('[error]Error: "web" extra is not installed.')
+    else:
+        threading.Timer(1, open_browser).start()
+        uvicorn.run(web_app, host=LOOPBACK_ADDR, port=PORT)
 
 
 def main():
