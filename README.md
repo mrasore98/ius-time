@@ -5,7 +5,7 @@
 
 A simple command line application for tracking time spent on tasks of various categories.
 
-Full documentation on the command line interface is available [here](docs/CommandLineInterface.md).
+**Full documentation on the command line interface is available [here](docs/CommandLineInterface.md).**
 
 # About the name
 
@@ -13,8 +13,8 @@ Every month at work, I had to report to the head of my department how much time
 was spent working on each project. This information would be collected from each employee and compiled into
 "Internal Use Software" information. 
 
-To be honest, I'm not sure what the higher-ups do with this information, but regardless, I figured I would track
-the data accurately instead of making up BS numbers at the end of the month. 
+I figured it would be better for all parties if I could track the data accurately instead of estimating, and I happened to be looking
+for a personal project to take on. 
 
 Thus, the `ius-time` CLI application was born.
 
